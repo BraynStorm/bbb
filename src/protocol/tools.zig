@@ -91,6 +91,9 @@ const PacketSliceDecl = struct {
                 var name_len: []const u8 = undefined;
                 var name_ptr: []const u8 = undefined;
 
+                if (s.fields.len != 2)
+                    return null;
+
                 for (s.fields) |field| {
                     switch (@typeInfo(field.type)) {
                         .Pointer => |p| {
@@ -113,6 +116,9 @@ const PacketSliceDecl = struct {
                         },
                     }
                 }
+
+                validate_packet_struct(ValueT);
+
                 return .{
                     .TypeT = T,
                     .SizeT = SizeT,
@@ -151,33 +157,39 @@ fn is_dynamic_struct(comptime T: type) bool {
 
 fn validate_packet_struct(comptime T: type) void {
     comptime {
-        for (@typeInfo(T).Struct.fields) |field| {
-            switch (@typeInfo(field.type)) {
-                .Struct => validate_packet_struct(field.type),
-                .Pointer => |p| switch (p.size) {
-                    .C, .One, .Slice => {
-                        @compileLog(field, T);
-                        @compileError("bbb: Pointers(1) are not supported");
-                    },
-                    .Many => {
-                        // If this succeeds, we're fine.
-                        if (PacketSliceDecl.init(T)) |_| {} else {
-                            @compileLog(field, T);
-                            @compileError("bbb: Pointers(2) are not supported");
-                        }
-                    },
+        switch (@typeInfo(T)) {
+            .Int, .Float => {},
+            .Struct => |s| {
+                if (PacketSliceDecl.init(T)) |_| {} else {
+                    for (s.fields) |field| {
+                        validate_packet_struct(field.type);
+                    }
+                }
+            },
+            .Array => |a| {
+                validate_packet_struct(a.child);
+            },
+            .Bool => {
+                @compileLog(T);
+                @compileError("bbb: bool in packet is inefficient - wastes 7bits.");
+            },
+            .Pointer => |p| switch (p.size) {
+                .C, .One, .Slice => {
+                    @compileLog(T);
+                    @compileError("bbb: Pointers(1) are not supported");
                 },
-                .Bool => {
-                    @compileLog(field, T);
-                    @compileError("bbb: bool in packet is inefficient - wastes 7bits.");
+                .Many => {
+                    // If this succeeds, we're fine.
+                    if (PacketSliceDecl.init(T)) |_| {} else {
+                        @compileLog(T);
+                        @compileError("bbb: Pointers(2) are not supported");
+                    }
                 },
-                .Int => {},
-                .Float => {},
-                else => {
-                    @compileLog(field, T);
-                    @compileError("bbb: Unknown Packet struct field type.");
-                },
-            }
+            },
+            else => {
+                @compileLog(T);
+                @compileError("bbb: Unknown Packet struct field type.");
+            },
         }
     }
 }
