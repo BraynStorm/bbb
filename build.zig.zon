@@ -1,0 +1,16 @@
+.{
+    .name = "bbb",
+    .version = "0.0.0",
+    .minimum_zig_version = "0.13.0",
+    .dependencies = .{
+        // .qml_zig = .{
+        //     .url = "https://github.com/kassane/qml_zig/archive/ca91d97539973cc1f33bf9d53e5d627040475dcc.zip",
+        //     .hash = "12207270425864f8cd00923d780fb09772938a26317705d0d005f1d91ca75800f57d",
+        // },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
