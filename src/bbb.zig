@@ -1,8 +1,8 @@
 const std = @import("std");
 const testing = std.testing;
 
-const Protocol = @import("protocol.zig");
+pub const protocol_worker = @import("protocol/worker_v001.zig");
 
-test "BBB Tests" {
-    std.testing.refAllDecls(Protocol);
+test "_" {
+    std.testing.refAllDecls(protocol_worker);
 }
